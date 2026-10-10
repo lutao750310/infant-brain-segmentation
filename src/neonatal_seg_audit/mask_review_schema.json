@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Offline mask review response 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "packet_id", "reviewer", "prompt_version", "prompt_sha256", "reviewed_evidence_ids", "checks", "findings", "recommendation", "clinical_acceptance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "packet_id": {"type": "string", "minLength": 1},
+    "reviewer": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "name", "model"],
+      "properties": {"kind": {"enum": ["human", "agent"]}, "name": {"type": "string", "minLength": 1}, "model": {"type": ["string", "null"]}}
+    },
+    "prompt_version": {"const": "mask-review-1.0"},
+    "prompt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reviewed_evidence_ids": {"$ref": "#/$defs/evidence"},
+    "checks": {
+      "type": "array", "minItems": 6, "maxItems": 6,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "status", "evidence_ids", "explanation"],
+        "properties": {
+          "id": {"$ref": "#/$defs/category"},
+          "status": {"enum": ["no_visible_problem", "suspected_problem", "not_assessable"]},
+          "evidence_ids": {"$ref": "#/$defs/evidence"},
+          "explanation": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["category", "description", "evidence_ids", "coordinate_IJK"],
+        "properties": {
+          "category": {"$ref": "#/$defs/category"},
+          "description": {"type": "string", "minLength": 1},
+          "evidence_ids": {"$ref": "#/$defs/evidence"},
+          "coordinate_IJK": {"type": ["array", "null"], "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 0}}
+        }
+      }
+    },
+    "recommendation": {"enum": ["suggest_pass", "needs_human_review", "technical_fail"]},
+    "clinical_acceptance": {"const": false}
+  },
+  "$defs": {
+    "evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "category": {"enum": ["brain_coverage", "eyes_scalp", "face_neck", "posterior_fossa", "csf_support", "isolated_components"]}
+  }
+}

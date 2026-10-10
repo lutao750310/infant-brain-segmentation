@@ -194,7 +194,7 @@ def demo(output):
     compare(out / "config.json", out / "comparison")
 
 
-def drawem_plan(image, mask, workdir, age, threads, image_digest, output):
+def drawem_plan(image, mask, workdir, age, threads, image_digest, output, qc_decision=None):
     if not np.isfinite(age) or not 28 <= age <= 44:
         raise ValueError("PMA must be continuously within 28..44 weeks; never silently clamp")
     if threads < 1:
@@ -210,6 +210,10 @@ def drawem_plan(image, mask, workdir, age, threads, image_digest, output):
     work = Path(workdir).resolve()
     if work.exists() and any(work.iterdir()):
         raise ValueError("Work directory must be fresh: never reuse old masked N4/priors/transforms")
+    gate = {"status": "not_provided_unapproved_plan", "clinical_acceptance": False}
+    if qc_decision:
+        from .mask_review import verify_decision
+        gate = verify_decision(qc_decision, image, mask)
     # Frozen historical entry point; verify the pinned image locally before executing.
     shell = (". /etc/fsl/fsl.sh; . /usr/src/structural-pipeline/parameters/path.sh; "
              f"timeout --signal=TERM --kill-after=30s 14400 mirtk neonatal-segmentation "
@@ -220,6 +224,7 @@ def drawem_plan(image, mask, workdir, age, threads, image_digest, output):
            "-v", f"{Path(image).resolve()}:/input/case.nii.gz:ro", "-v", f"{work}:/work",
            "--workdir", "/work", "--entrypoint", "/bin/bash", image_digest, "-c", shell]
     plan = {"dry_run_only": True, "executed": False, "clinical_acceptance": False,
+            "mask_qc_gate": gate, "ready_for_exploratory_drawem": bool(qc_decision),
             "pma_weeks_continuous": age, "pma_template_rounded": int(np.rint(age)),
             "input": {"path": str(Path(image).resolve()), "sha256": sha256(image)},
             "mask": {"path": str(Path(mask).resolve()), "sha256": sha256(mask)},
@@ -251,6 +256,21 @@ def main(argv=None):
         p.add_argument("--" + flag, required=True)
     p.add_argument("--pma", type=float, required=True)
     p.add_argument("--threads", type=int, default=8)
+    p.add_argument("--mask-qc-decision", help="Validated human technical decision; without it the dry plan is explicitly unapproved")
+    p = sub.add_parser("mask-qc")
+    for flag in ("image", "mask", "output"):
+        p.add_argument("--"+flag, required=True)
+    p.add_argument("--mode", choices=("human", "agent"), default="agent")
+    p.add_argument("--planes-per-page", type=int, default=5)
+    p = sub.add_parser("record-mask-review")
+    for flag in ("packet", "response", "output"):
+        p.add_argument("--"+flag, required=True)
+    p = sub.add_parser("decide-mask-qc")
+    for flag in ("packet", "review", "decision", "output"):
+        p.add_argument("--"+flag, required=True)
+    p = sub.add_parser("mask-qc-demo")
+    p.add_argument("--output", required=True)
+    p.add_argument("--mode", choices=("human", "agent"), default="agent")
     args = parser.parse_args(argv)
     try:
         if args.command == "compare":
@@ -270,8 +290,20 @@ def main(argv=None):
                 writer.writerows(result["regions"])
             if before != sha256(args.labels):
                 raise RuntimeError("Input changed during volume calculation")
-        else:
-            drawem_plan(args.image, args.mask, args.workdir, args.pma, args.threads, args.image_digest, args.output)
+        elif args.command == "plan-drawem":
+            drawem_plan(args.image, args.mask, args.workdir, args.pma, args.threads, args.image_digest, args.output, args.mask_qc_decision)
+        elif args.command == "mask-qc":
+            from .mask_review import prepare_packet
+            prepare_packet(args.image, args.mask, args.output, args.mode, args.planes_per_page)
+        elif args.command == "record-mask-review":
+            from .mask_review import record_review
+            record_review(args.packet, args.response, args.output)
+        elif args.command == "decide-mask-qc":
+            from .mask_review import decide_review
+            decide_review(args.packet, args.review, args.decision, args.output)
+        elif args.command == "mask-qc-demo":
+            from .mask_review import demo_packet
+            demo_packet(args.output, args.mode)
     except (ValueError, OSError, KeyError, TypeError) as exc:
         parser.exit(2, f"Error: {exc}\n")
     print(f"Completed {args.command}: {Path(args.output).resolve()}")
