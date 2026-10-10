@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infant-brain-segmentation"
+version = "0.1.0"
+description = "Infant brain segmentation workflow and native-grid research audit tools"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24,<3", "nibabel>=5,<6", "scipy>=1.10,<2", "matplotlib>=3.7,<4"]
+
+[project.scripts]
+neonatal-audit = "neonatal_seg_audit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
