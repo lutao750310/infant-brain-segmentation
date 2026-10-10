@@ -11,6 +11,7 @@
 | nnUNet v1 | 兼容模型推理 | [v1分支](https://github.com/MIC-DKFZ/nnUNet/tree/nnunetv1) |
 | ITK-SNAP | 人工勾画及复核 | [官网](https://www.itksnap.org/) |
 | 3D Slicer | 三向叠加、空间链检查 | [官网](https://www.slicer.org/) |
+| jsonschema | 校验复核回填协议，采用Draft 2020-12 | [官方验证文档](https://python-jsonschema.readthedocs.io/en/stable/validate/) |
 
 DrawEM上游说明其代码使用Apache-2.0，并分别列出图谱许可；代码许可不能替代图谱授权。ANUBEX权重、nnUNet、FSL和各图谱许可需分别查验，仓库不复制权重、图谱或第三方实现。
 

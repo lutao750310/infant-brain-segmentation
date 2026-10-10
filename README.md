@@ -6,6 +6,8 @@ Infant Brain Segmentation · T2脑提取、脑区分割、质量复核与体积�
 
 公开仓库仅含方法文档、自编核查代码和合成测试；不含患者影像、人工勾画、病例编号、临床结果、历史敏感日志或第三方模型/图谱。
 
+v0.2新增[脑掩膜人工与Agent辅助复核包](MASK_REVIEW.md)：可选择human或agent方式，检查空间、生成连续全图与局部证据、校验回填JSON并保存人工决定。它不调用模型API，也不自动验收或运行分割。
+
 ## 流程图
 
 ![婴儿脑分割研究流程](workflow.svg)
@@ -42,13 +44,20 @@ neonatal-audit demo --output runs/synthetic-demo
 1. **准备输入**：经授权的全视野3D T2、扫描时PMA、有效毫米空间头信息。保留采集原图；如统一到1mm处理网格，要保存重采样记录，不把它叫作采集原始分辨率。
 2. **核对空间**：检查左右方向、affine、qform/sform、体素大小及覆盖范围。A/B用同一输入网格；标签传播使用最近邻或离散标签算法，灰度图才用连续插值。
 3. **独立脑提取**：在兼容nnUNet v1环境获取并核验ANUBEX-SA模型，生成二值掩膜。`scripts/predict_brain_mask.py`提供固定五折、TTA和禁用连通域后处理的适配入口。
-4. **掩膜门槛**：三向连续看脑缘、眼眶、后枕、CSF、小脑/脑干。未通过先修复和记录，不通过自动删最大连通域“美化”结果。
+4. **掩膜门槛**：用[离线复核包](MASK_REVIEW.md)检查脑缘、眼眶、后枕、CSF、小脑/脑干。人工或已有视觉Agent按版本化提示词逐页查看，保存证据引用，再由人作探索性技术决定；未通过先记录和修复，不自动删最大连通域。
 5. **全新DrawEM**：在空目录预置 `<subject>_brain_mask.nii.gz`，核实上游跳过BET条件；重新产生N4、组织先验、配准、EM与后处理，不复用旧中间文件。
 6. **脑区门槛**：在相同患者背景、同物理位置、同窗宽窗位上看全图＋局部＋连续邻层；重点核查灰白质、基底节、丘脑、海马、小脑/脑干和脑室。
 7. **体积与方法比较**：在最终个体网格计量，输出CSV/JSON；参考勾画协议先统一。重合度/质心差是技术一致性，不直接等于准确率/解剖偏移。
 8. **可追溯归档**：记录输入、掩膜、标签、配置、软件/模型版本及SHA-256；技术失败和病变排除分开。区域通过复核后才进入研究统计。
 
 ## 本仓库能直接做什么
+
+```bash
+neonatal-audit mask-qc-demo --mode agent --output runs/mask-qc-synthetic
+neonatal-audit mask-qc --image /path/to/case.nii.gz --mask /path/to/case_mask.nii.gz --mode human --output runs/mask-packet
+```
+
+复核者查看原图与证据后回填JSON，使用`record-mask-review`和`decide-mask-qc`留痕。agent模式是接入已有视觉会话的离线协议，不是本程序自动调用AI。详见[MASK_REVIEW.md](MASK_REVIEW.md)。
 
 ```bash
 neonatal-audit compare --config examples/compare.json --output runs/comparison
@@ -64,6 +73,7 @@ neonatal-audit --help
 
 - [IMPLEMENTATION.md](IMPLEMENTATION.md)：具体实现步骤、示例命令与运行边界。
 - [QC_CHECKLIST.md](QC_CHECKLIST.md)：掩膜/区域/人工标注的复核清单。
+- [MASK_REVIEW.md](MASK_REVIEW.md)：human/agent方式、版本化提示词、回填规范和人工决定。
 - [METRICS.md](METRICS.md)：体积与一致性定义。
 - [PRIVACY.md](PRIVACY.md)：公开范围及数据安全。
 - [THIRD_PARTY.md](THIRD_PARTY.md)：上游工具、来源与许可边界。
