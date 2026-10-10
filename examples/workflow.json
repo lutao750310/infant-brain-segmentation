@@ -1,0 +1,33 @@
+{
+  "version": "public-method-20261010",
+  "research_only": true,
+  "clinical_acceptance": false,
+  "scope": "neonatal T2, not all infant ages",
+  "pma_continuous_range_weeks": [28, 44],
+  "pma_rounding_rule": "nearest integer, half to even; retain continuous PMA",
+  "processing_grid_spacing_mm_if_standardized": [1, 1, 1],
+  "processing_grid_is_not_original_acquisition_resolution": true,
+  "anubex": {
+    "task": "Task402",
+    "nnunet_major_version": 1,
+    "folds": [0, 1, 2, 3, 4],
+    "tta": true,
+    "step_size": 0.5,
+    "mixed_precision": true,
+    "disable_postprocessing": true,
+    "seed": 0,
+    "manual_mask_qc_required": true
+  },
+  "drawem": {
+    "atlas": "ALBERT",
+    "fresh_workdir_required": true,
+    "mask_preplaced_before_preprocess": true,
+    "fresh_N4_priors_registration_EM_postprocess": true,
+    "example_threads_not_universal_requirement": 8,
+    "regional_review_required": true
+  },
+  "volume_label_schema": "frozen DHF87 groups; verify atlas LUT before use",
+  "automatic_cohort_expansion": false,
+  "automatic_formal_result_replacement": false,
+  "CSF_compatibility_guaranteed": false
+}

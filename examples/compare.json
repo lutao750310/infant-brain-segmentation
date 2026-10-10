@@ -1,0 +1,10 @@
+{
+  "image": "data/subject_T2_1mm.nii.gz",
+  "reference": "data/clinician_labels.nii.gz",
+  "reference_status": "Uncertain clinician reference; completeness and independence require confirmation",
+  "regions": {"Hippocampus_L": [1], "Hippocampus_R": [2]},
+  "candidates": {
+    "A_BET_DrawEM": {"path": "data/A_all_labels.nii.gz"},
+    "B_ANUBEX_DrawEM": {"path": "data/B_all_labels.nii.gz"}
+  }
+}
