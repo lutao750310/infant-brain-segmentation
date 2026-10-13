@@ -25,3 +25,6 @@ runs/
 *.jpg
 *.zip
 
+# Explicitly licensed public M-CRIB derived figures; no blanket image exception.
+!/mcrib-p01-brain-mask-ab.png
+!/mcrib-p02-brain-mask-ab.png
